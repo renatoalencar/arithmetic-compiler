@@ -1,1 +1,2 @@
+;; dune exec ./src/main.exe example.exp
 $1 - $2 * 10 + 100

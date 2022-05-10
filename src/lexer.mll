@@ -8,10 +8,12 @@ let digit = ['0'-'9']
 let imm = '-'? digit+
 let whitespace = [' ' '\t']+
 let newline = '\r'? '\n'
+let comment = ';' ';' [^ '\n']* '\n'
 
 rule read =
   parse
   | whitespace  { read lexbuf }
+  | comment
   | newline     { Lexing.new_line lexbuf; read lexbuf }
   | imm         { IMM (int_of_string (Lexing.lexeme lexbuf))}
   | '$'         { PARAM (int_of_string (read_param lexbuf)) }
