@@ -1,0 +1,10 @@
+(menhir
+ (modules parser))
+
+(ocamllex lexer)
+
+(executable
+ (name main)
+ (modules lexer parser main ast x86assembly compiler iR)
+ (libraries ppx_show.runtime)
+ (preprocess (pps ppx_show)))
