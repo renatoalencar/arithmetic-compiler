@@ -32,7 +32,7 @@ module Stack = struct
     let rec aux res stack n =
       match stack with
       | top :: stack ->
-        if n = 0 then List.append (List.rev res) stack
+        if n = 0 then List.rev_append res stack
         else aux (top :: res) stack (n - 1)
       | [] -> failwith "Empty stack"
     in
