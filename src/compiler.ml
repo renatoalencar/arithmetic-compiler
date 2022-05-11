@@ -31,14 +31,13 @@ module Stack = struct
     state.stack <- addr :: state.stack
 
   let drop state n =
-    let rec aux res stack n =
-      match stack with
-      | top :: stack ->
-        if n = 0 then List.rev_append res stack
-        else aux (top :: res) stack (n - 1)
-      | [] -> failwith "Empty stack"
+    let rec aux stack n =
+      match stack, n with
+      | _ :: stack, 0 -> stack
+      | _ :: stack, n -> aux stack (n - 1)
+      | [], _ -> failwith "Empty stack"
     in
-    state.stack <- aux [] state.stack n
+    state.stack <- aux state.stack (n - 1)
 end
 
 module InstrBuffer = struct
@@ -88,13 +87,17 @@ let restore_stack state size =
     [ ADD (IMM (size * 8), REG RSP)
     ; POP (REG RBP) ]
 
-let resolve_stack_to_stack state src dst =
+let resolve_parameters state src dst =
   match src, dst with
   | X86assembly.STACK _, X86assembly.STACK _ ->
     let reg = Register.alloc state in
     InstrBuffer.push state [ MOV (src, REG reg) ];
-    X86assembly.REG reg
-  | _ -> src
+    X86assembly.REG reg, dst
+  | _, X86assembly.IMM _ ->
+    let reg = Register.alloc state in
+    InstrBuffer.push state [ MOV (dst, REG reg) ];
+    src, X86assembly.REG reg
+  | _ -> src, dst
 
 let push_print_address state addr =
   InstrBuffer.push state
@@ -109,33 +112,34 @@ let rec compile ?stack_size state ir =
     let stack_size = compile_params state body in
     List.iter (compile ~stack_size state) body
   | INT value, _ ->
-    let reg = Register.alloc state in
-    InstrBuffer.push state [ MOV (IMM value, REG reg) ];
-    Stack.push state (X86assembly.REG reg)
+    Stack.push state (X86assembly.IMM value)
   | PRINT, top :: _ ->
     push_print_address state top;
     Register.free state top;
-    Stack.drop state 0
+    Stack.drop state 1
   | RETURN, a :: _ ->
     Option.iter (restore_stack state) stack_size;
     InstrBuffer.push state @@ X86assembly.return a;
     Register.free state a;
-    Stack.drop state 0
+    Stack.drop state 1
   | ADD, a :: b :: _ ->
-    let a = resolve_stack_to_stack state a b in
+    let a, b = resolve_parameters state a b in
     InstrBuffer.push state [ ADD (a, b) ];
     Register.free state a;
-    Stack.drop state 0
+    Stack.drop state 2;
+    Stack.push state b
   | MUL, a :: b :: _ ->
-    let a = resolve_stack_to_stack state a b in
+    let a, b = resolve_parameters state a b in
     InstrBuffer.push state [ IMUL (a, b) ];
     Register.free state a;
-    Stack.drop state 0
+    Stack.drop state 2;
+    Stack.push state b
   | SUB, a :: b :: _ ->
-    let b = resolve_stack_to_stack state b a in
+    let b, a = resolve_parameters state b a in
     InstrBuffer.push state [ SUB (b, a) ];
     Register.free state b;
-    Stack.drop state 1
+    Stack.drop state 2;
+    Stack.push state a
   | PARAM idx, _ ->
     Stack.push state (STACK idx)
   | ir, stack ->
