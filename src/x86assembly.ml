@@ -120,7 +120,6 @@ let emit_string output label value =
     [ LABEL label
     ; PSEUDO (".asciz \"" ^ value ^ "\"")]
 
-let emit_ret output value =
-  emit_list output
-    [ MOV (value, REG RAX)
-    ; RET ]
+let return value =
+  [ MOV (value, REG RAX)
+  ; RET ]
