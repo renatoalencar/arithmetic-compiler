@@ -7,9 +7,9 @@ type t = { output : out_channel
 
 let make output =
   { output
-  ; buffer = []
-  ; stack = []
-  ; registers = [ R8 ; R9 ; R10 ; R11 ] }
+  ; buffer    = []
+  ; stack     = []
+  ; registers = [ RAX ; RCX ; RDX ; R8 ] }
 
 module Register = struct
   let alloc state =

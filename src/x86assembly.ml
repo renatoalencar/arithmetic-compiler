@@ -3,6 +3,9 @@ type register =
   | RDI
   | RSI
   | RAX
+  | RBX
+  | RCX
+  | RDX
   | RBP
   | RSP
   | R8
@@ -13,6 +16,9 @@ type register =
 
 let register_to_string = function
   | RAX -> "%rax"
+  | RBX -> "%rbx"
+  | RCX -> "%rcx"
+  | RDX -> "%rdx"
   | RIP -> "%rip"
   | RDI -> "%rdi"
   | RSI -> "%rsi"
